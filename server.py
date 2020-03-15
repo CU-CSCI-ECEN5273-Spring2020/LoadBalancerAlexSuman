@@ -1,7 +1,12 @@
 from http import server
+import sys
 
 ADDR = "localhost"
-PORT = 8000
+PORT = int(sys.argv[1])
 
-httpd = server.HTTPServer((ADDR, PORT), server.SimpleHTTPRequestHandler)
-httpd.serve_forever()
+try:
+    httpd = server.HTTPServer((ADDR, PORT), server.SimpleHTTPRequestHandler)
+    httpd.serve_forever()
+
+except:
+    print("Could not create server on requested port.")
