@@ -3,11 +3,32 @@ import requests
 from http.server import BaseHTTPRequestHandler
 from io import BytesIO
 
+import random
+import time
+
 from _thread import *
 import threading
 
 print_lock = threading.Lock()
 request_lock = threading.Lock()
+
+class cpu_intensive(BaseHTTPRequestHandler):
+    def __init__(self):
+         compute_primes()
+
+    def compute_primes(self):
+         start_time = time.time()
+         num = random.randint(4589789,78909929)
+         #num = 78909929
+         num_copy = num
+         result = 0
+         for i in range(1,num):
+             result += i             #computing fiboncci series (exec time max 8sec)
+             #num_copy%i             #random division and mod operation (exec time 5sec)
+             #num_copy/i
+         end_time = time.time()
+         print(end_time - start_time)
+
 
 class HTTPRequest(BaseHTTPRequestHandler):
     def __init__(self, request_text):
@@ -45,7 +66,8 @@ class Balancer:
 
       # Get the raw content of the request and convert to an HTTPRequest
       content = connection.recv(4096)
-      request = HTTPRequest(content)
+#      request = HTTPRequest(content)
+      request = cpu_intensive(content)
 
       # Select the server based on the mode
       server = None
