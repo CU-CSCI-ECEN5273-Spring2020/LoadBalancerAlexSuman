@@ -1,5 +1,6 @@
 import socket
 import requests
+import time
 from http.server import BaseHTTPRequestHandler
 from io import BytesIO
 
@@ -21,6 +22,8 @@ class HTTPRequest(BaseHTTPRequestHandler):
 
 class Balancer:
 
+     verbose = False
+
      request_num = 0
      server_list = []
      
@@ -28,6 +31,7 @@ class Balancer:
      MODE_LEASTCONNECTION = 2
      MODE_CHAINEDFAILOVER = 3
 
+     # Default to round robin
      mode = MODE_ROUNDROBIN
      
      def __init__(self, host, port, server_list):
@@ -37,6 +41,9 @@ class Balancer:
 
      def threaded_connection(self, connection, address):
           
+          if self.verbose:
+               start_time = time.thread_time_ns()
+
           # Increment the request number
           request_lock.acquire()
           self.request_num += 1
@@ -50,28 +57,73 @@ class Balancer:
           server = None
           if self.mode == self.MODE_ROUNDROBIN:
                server = self.select_roundrobin()
+          elif self.mode == self.MODE_CHAINEDFAILOVER:
+               server = self.select_chainedfailover(0);
           else:
                # Default to round robin
                server = self.select_roundrobin()
 
-          # Format the url for the get request to the selected server
-          url = "{}{}".format(server["protocol"], server["host"])
-          if "port" in server:
-               url += ":" + str(server["port"])
-          url += request.path
-          
-          with print_lock:
-               print("Routing connection to:", url)
-
           # Pass the HTTP request to the server and get a response
           resp = None
-          try:
-               resp = requests.get(url, headers=request.headers, verify=False)
-          except:
-               with print_lock:
-                    print("Server not found")
-               connection.close()
 
+          # Chained Failover - try every server until we get a response (or until we've tried every single server)
+          if self.mode == self.MODE_CHAINEDFAILOVER:
+               offset = 0
+               while resp == None:
+                    offset += 1
+                    url = self.build_url(server, request)
+
+                    if self.verbose:
+                         print_lock.acquire()
+                         print("Trying to route connection to:", url)
+                         print_lock.release()
+
+                    try:
+                         resp = requests.get(url, headers=request.headers, verify=False)
+                    except:
+
+                         if self.verbose:
+                              print_lock.acquire()
+                              print("Routing to " + url + " failed")
+                              print_lock.release()
+
+                         resp = None
+                         server = self.select_chainedfailover(offset)
+
+                         # If we've tried every server, give up
+                         if offset > len(self.server_list):
+
+                              if self.verbose:
+                                   print_lock.acquire()
+                                   print("Server not found")
+                                   print_lock.release()
+                              
+                              # Close the connection and return
+                              connection.close()
+                              return
+          else:
+               url = self.build_url(server, request)
+               if self.verbose:
+                    print_lock.acquire()
+                    print("Trying to route connection to:", url)
+                    print_lock.release()
+               try:
+                    resp = requests.get(url, headers=request.headers, verify=False)
+               except:
+                    if self.verbose:
+                         print_lock.acquire()
+                         print("Server not found")
+                         print_lock.release()
+
+                    # Close the connection and return
+                    connection.close()
+                    return
+
+
+          if self.verbose:
+               print_lock.acquire()
+               print("Successfully routed to " + url)
+               print_lock.release()
 
           # Form the response back to the client based on the response from the server
           response_headers_raw = "".join("%s\r\n" % header for header in resp.headers)
@@ -80,13 +132,25 @@ class Balancer:
           response_status_text = "OK"
           response = "%s %s %s\r\n" % (response_protocol, response_status, response_status_text)
           
+          if self.verbose:
+               print_lock.acquire()
+               print("Sending response to client")
+               print_lock.release()
+
           # Send the response back to the client and close the connection
           connection.send(response.encode())
           connection.send(response_headers_raw.encode())
           connection.send("\r\n".encode())
           connection.send(resp.content)
           connection.close()
-          
+
+          if self.verbose:
+               end_time = time.thread_time_ns()
+
+               total_time = end_time - start_time
+               print_lock.acquire()
+               print("Response took: " + str(total_time) + " nanoseconds (" + str(total_time / 1000000) + " milliseconds)\n")
+               print_lock.release()
 
      def start(self):
           global socket
@@ -101,8 +165,10 @@ class Balancer:
                # Accept a request from the client
                connection, address = socket.accept()
 
-               with print_lock:
+               if self.verbose:
+                    print_lock.acquire()
                     print("Received a connection from:", address)
+                    print_lock.release()
 
                start_new_thread(self.threaded_connection, (connection, address,))
                
@@ -113,6 +179,19 @@ class Balancer:
           server = self.server_list[server_num]
           return server
 
+     def select_chainedfailover(self, offset):
+          server_num = (self.request_num + offset) % len(self.server_list)
+          server = self.server_list[server_num]
+          return server 
+
+     def build_url(self, server, request):
+          # Format the url for the get request to the selected server
+          url = "{}{}".format(server["protocol"], server["host"])
+          if "port" in server:
+               url += ":" + str(server["port"])
+          url += request.path
+          return url
+
 if __name__ == "__main__":
      HOST = "localhost"
      PORT = 8080
@@ -122,6 +201,7 @@ if __name__ == "__main__":
                ]
 
      LoadBalancer = Balancer(HOST, PORT, SERVERS)
-     LoadBalancer.mode = Balancer.MODE_ROUNDROBIN
+     LoadBalancer.mode = Balancer.MODE_CHAINEDFAILOVER
+     LoadBalancer.verbose = True
      LoadBalancer.start()
      
