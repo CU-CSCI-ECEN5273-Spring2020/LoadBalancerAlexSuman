@@ -1,3 +1,5 @@
+
+
 import socket
 import requests
 import time
@@ -9,6 +11,7 @@ import threading
 
 print_lock = threading.Lock()
 request_lock = threading.Lock()
+count_lock = threading.Lock()
 
 class HTTPRequest(BaseHTTPRequestHandler):
      def __init__(self, request_text):
@@ -26,6 +29,7 @@ class Balancer:
 
      request_num = 0
      server_list = []
+     server_request_count = []
      
      MODE_ROUNDROBIN = 1
      MODE_LEASTCONNECTION = 2
@@ -38,6 +42,12 @@ class Balancer:
           self.server_list = server_list
           self.host = host
           self.port = port
+
+          # Set the initial request count for every server to 0
+          for server in server_list:
+               server["request_count"] = 0
+               
+          print(server_list)
 
      def threaded_connection(self, connection, address):
           
@@ -55,8 +65,12 @@ class Balancer:
           
           # Select the server based on the mode
           server = None
+          server_num = None
+
           if self.mode == self.MODE_ROUNDROBIN:
                server = self.select_roundrobin()
+          elif self.mode == self.MODE_LEASTCONNECTION:
+               server = self.select_leastconnection()
           elif self.mode == self.MODE_CHAINEDFAILOVER:
                server = self.select_chainedfailover(0);
           else:
@@ -79,12 +93,22 @@ class Balancer:
                          print_lock.release()
 
                     try:
+                         # Increment the server request count
+                         count_lock.acquire()
+                         server["request_count"] += 1
+                         count_lock.release()
+
                          resp = requests.get(url, headers=request.headers, verify=False)
                     except:
 
+                         # Fail. Decrement the server request count
+                         count_lock.acquire()
+                         server["request_count"] -= 1
+                         count_lock.release()
+
                          if self.verbose:
                               print_lock.acquire()
-                              print("Routing to " + url + " failed")
+                              print("Routing to " + url + " failed. Failing over to next server.")
                               print_lock.release()
 
                          resp = None
@@ -95,7 +119,7 @@ class Balancer:
 
                               if self.verbose:
                                    print_lock.acquire()
-                                   print("Server not found")
+                                   print("No responsive server found. Closing connection.")
                                    print_lock.release()
                               
                               # Close the connection and return
@@ -108,8 +132,19 @@ class Balancer:
                     print("Trying to route connection to:", url)
                     print_lock.release()
                try:
+                    # Increment the server request count
+                    count_lock.acquire()
+                    server["request_count"] += 1
+                    count_lock.release()
+
                     resp = requests.get(url, headers=request.headers, verify=False)
                except:
+
+                    # Fail. Decrement the server request count
+                    count_lock.acquire()
+                    server["request_count"] -= 1
+                    count_lock.release()
+
                     if self.verbose:
                          print_lock.acquire()
                          print("Server not found")
@@ -119,6 +154,11 @@ class Balancer:
                     connection.close()
                     return
 
+
+           # Success! Decrement the server request count.
+          count_lock.acquire()
+          server["request_count"] -= 1
+          count_lock.release()
 
           if self.verbose:
                print_lock.acquire()
@@ -143,6 +183,8 @@ class Balancer:
           connection.send("\r\n".encode())
           connection.send(resp.content)
           connection.close()
+
+          
 
           if self.verbose:
                end_time = time.thread_time_ns()
@@ -184,6 +226,11 @@ class Balancer:
           server = self.server_list[server_num]
           return server 
 
+     def select_leastconnection(self):
+          # Find the server with the least current connections
+          server = min(self.server_list, key=lambda server: server["request_count"])
+          return server
+
      def build_url(self, server, request):
           # Format the url for the get request to the selected server
           url = "{}{}".format(server["protocol"], server["host"])
@@ -193,15 +240,15 @@ class Balancer:
           return url
 
 if __name__ == "__main__":
-     HOST = "localhost"
-     PORT = 8080
+     BALANCER_HOST = "localhost"
+     BALANCER_PORT = 8082
      SERVERS = [
                     {"protocol": "http://", "host": "localhost", "port": 8000}, 
                     {"protocol": "http://", "host": "localhost", "port": 8001},
                ]
 
-     LoadBalancer = Balancer(HOST, PORT, SERVERS)
-     LoadBalancer.mode = Balancer.MODE_CHAINEDFAILOVER
+     LoadBalancer = Balancer(BALANCER_HOST, BALANCER_PORT, SERVERS)
+     LoadBalancer.mode = Balancer.MODE_LEASTCONNECTION
      LoadBalancer.verbose = True
      LoadBalancer.start()
      
