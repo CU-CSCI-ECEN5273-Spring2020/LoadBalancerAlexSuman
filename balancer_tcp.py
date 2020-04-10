@@ -46,8 +46,6 @@ class Balancer:
           # Set the initial request count for every server to 0
           for server in server_list:
                server["request_count"] = 0
-               
-          print(server_list)
 
      def threaded_connection(self, connection, address):
           
@@ -119,11 +117,11 @@ class Balancer:
 
                               if self.verbose:
                                    print_lock.acquire()
-                                   print("No responsive server found. Closing connection.")
+                                   print("No responsive server found. Closing connection.\n")
                                    print_lock.release()
                               
                               # Close the connection and return
-                              connection.close()
+                              self.send_404(connection)
                               return
           else:
                url = self.build_url(server, request)
@@ -147,11 +145,11 @@ class Balancer:
 
                     if self.verbose:
                          print_lock.acquire()
-                         print("Server not found")
+                         print("Server was unresponsive. Closing connection.\n")
                          print_lock.release()
 
                     # Close the connection and return
-                    connection.close()
+                    self.send_404(connection)
                     return
 
 
@@ -212,7 +210,7 @@ class Balancer:
                     print("Received a connection from:", address)
                     print_lock.release()
 
-               start_new_thread(self.threaded_connection, (connection, address,))
+               start_new_thread(self.threaded_connection, (connection, address))
                
           socket.close()
 
@@ -239,16 +237,21 @@ class Balancer:
           url += request.path
           return url
 
+     def send_404(self, connection):
+          connection.send("HTTP/1.1 404 Not Found\nContent-Type: text/html; charset=UTF-8\n\n".encode())
+          connection.send("404 - Server not found".encode())
+          connection.send("\r\n".encode())
+          connection.close()
+
 if __name__ == "__main__":
      BALANCER_HOST = "localhost"
-     BALANCER_PORT = 8082
+     BALANCER_PORT = 8081
      SERVERS = [
                     {"protocol": "http://", "host": "localhost", "port": 8000}, 
-                    {"protocol": "http://", "host": "localhost", "port": 8001},
+                    {"protocol": "http://", "host": "localhost", "port": 8001}
                ]
 
      LoadBalancer = Balancer(BALANCER_HOST, BALANCER_PORT, SERVERS)
      LoadBalancer.mode = Balancer.MODE_LEASTCONNECTION
      LoadBalancer.verbose = True
      LoadBalancer.start()
-     
