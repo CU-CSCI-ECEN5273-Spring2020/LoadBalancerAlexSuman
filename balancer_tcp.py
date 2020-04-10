@@ -165,6 +165,7 @@ class Balancer:
 
           # Form the response back to the client based on the response from the server
           response_headers_raw = "".join("%s\r\n" % header for header in resp.headers)
+          response_headers_raw += "Access-Control-Allow-Origin: *\r\n"
           response_protocol = "HTTP/1.1"
           response_status = "200"
           response_status_text = "OK"
@@ -238,7 +239,7 @@ class Balancer:
           return url
 
      def send_404(self, connection):
-          connection.send("HTTP/1.1 404 Not Found\nContent-Type: text/html; charset=UTF-8\n\n".encode())
+          connection.send("HTTP/1.1 404 Not Found\nContent-Type: text/html; charset=UTF-8\nAccess-Control-Allow-Origin: *\n\n\n".encode())
           connection.send("404 - Server not found".encode())
           connection.send("\r\n".encode())
           connection.close()
@@ -252,6 +253,6 @@ if __name__ == "__main__":
                ]
 
      LoadBalancer = Balancer(BALANCER_HOST, BALANCER_PORT, SERVERS)
-     LoadBalancer.mode = Balancer.MODE_LEASTCONNECTION
+     LoadBalancer.mode = Balancer.MODE_ROUNDROBIN
      LoadBalancer.verbose = True
      LoadBalancer.start()
