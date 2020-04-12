@@ -3,5 +3,12 @@ from http import server
 ADDR = "localhost"
 PORT = 8000
 
-httpd = server.HTTPServer((ADDR, PORT), server.SimpleHTTPRequestHandler)
+class cpu_intenseive(server.BaseHTTPRequestHandler):
+    
+    
+    
+    def do_GET(self,body = TRUE):
+        
+
+httpd = server.HTTPServer((ADDR, PORT), cpu_intensive)
 httpd.serve_forever()
