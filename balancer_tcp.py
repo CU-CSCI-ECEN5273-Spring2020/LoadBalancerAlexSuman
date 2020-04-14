@@ -1,5 +1,3 @@
-
-
 import socket
 import requests
 import time
@@ -113,7 +111,7 @@ class Balancer:
                          server = self.select_chainedfailover(offset)
 
                          # If we've tried every server, give up
-                         if offset > len(self.server_list):
+                         if offset >= len(self.server_list):
 
                               if self.verbose:
                                    print_lock.acquire()
@@ -165,7 +163,7 @@ class Balancer:
 
           # Form the response back to the client based on the response from the server
           response_headers_raw = "".join("%s\r\n" % header for header in resp.headers)
-          response_headers_raw += "Access-Control-Allow-Origin: *\r\n"
+          response_headers_raw += "Access-Control-Allow-Origin: *\r\n" # Enable CORs
           response_protocol = "HTTP/1.1"
           response_status = "200"
           response_status_text = "OK"
@@ -253,6 +251,6 @@ if __name__ == "__main__":
                ]
 
      LoadBalancer = Balancer(BALANCER_HOST, BALANCER_PORT, SERVERS)
-     LoadBalancer.mode = Balancer.MODE_ROUNDROBIN
+     LoadBalancer.mode = Balancer.MODE_CHAINEDFAILOVER
      LoadBalancer.verbose = True
      LoadBalancer.start()
