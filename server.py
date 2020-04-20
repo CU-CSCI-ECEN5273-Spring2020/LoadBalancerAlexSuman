@@ -2,9 +2,11 @@ from http import server
 import requests
 import time
 import random
+import sys
 
 ADDR = "localhost"
-PORT = 8000
+#PORT = 8000
+PORT = int(sys.argv[1])
 
 class cpu_intensive(server.BaseHTTPRequestHandler):
     def compute_primes(self):
@@ -17,12 +19,12 @@ class cpu_intensive(server.BaseHTTPRequestHandler):
             #num_copy%i             #random division and mod operation (exec time 5sec)
             #num_copy/i
             end_time = time.time()
-        #return (end_time - start_time)
+        return (end_time - start_time)
     
     def do_GET(self,body = True):
-        #exec_time = self.compute_primes()    
-        self.compute_primes()
-        #self.wfile.write(exec_time)
+        self.send_response(200)
+        exec_time = self.compute_primes()
+        self.wfile.write(str(exec_time).encode())
 
 httpd = server.HTTPServer((ADDR, PORT), cpu_intensive)
 httpd.serve_forever()
