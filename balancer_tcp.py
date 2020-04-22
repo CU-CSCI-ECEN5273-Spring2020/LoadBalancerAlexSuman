@@ -245,7 +245,8 @@ class Balancer:
           connection.close()
 
 if __name__ == "__main__":
-     BALANCER_HOST = "localhost"
+#     BALANCER_HOST = "localhost"
+     BALANCER_HOST = "35.197.5.17"
      BALANCER_PORT = 8081
      SERVERS = [
                #     {"protocol": "http://", "host": "localhost", "port": 8000}, 
