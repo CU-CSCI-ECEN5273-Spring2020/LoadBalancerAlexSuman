@@ -16,8 +16,13 @@ def threaded_get():
      try:
           resp = requests.get("http://localhost:8081", verify=False)
 
-          with count_lock:
-               succ_count += 1
+          if resp.status_code == 200:
+               with count_lock:
+                    succ_count += 1
+          else:
+               with count_lock:
+                    fail_count += 1
+
      except Exception as e:
           with count_lock:
                fail_count += 1

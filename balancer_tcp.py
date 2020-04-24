@@ -249,13 +249,10 @@ if __name__ == "__main__":
      BALANCER_PORT = 8081
      SERVERS = [
                     {"protocol": "http://", "host": "localhost", "port": 8000}, 
-                    {"protocol": "http://", "host": "localhost", "port": 8001},
-                    {"protocol": "http://", "host": "localhost", "port": 8002},
-                    {"protocol": "http://", "host": "localhost", "port": 8003},
-                    {"protocol": "http://", "host": "localhost", "port": 8004}
+                    {"protocol": "http://", "host": "localhost", "port": 8001}
                ]
 
      LoadBalancer = Balancer(BALANCER_HOST, BALANCER_PORT, SERVERS)
-     LoadBalancer.mode = Balancer.MODE_ROUNDROBIN
-     LoadBalancer.verbose = False
+     LoadBalancer.mode = Balancer.MODE_CHAINEDFAILOVER
+     LoadBalancer.verbose = True
      LoadBalancer.start()
