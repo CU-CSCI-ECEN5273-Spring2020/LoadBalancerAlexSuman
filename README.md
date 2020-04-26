@@ -17,7 +17,7 @@ python3.7 balancer_service.py restart     # Restart the service
 
 ### Server:
 ``` sh
-python3.7 intensive_server_service.py start       # Start the service
-python3.7 intensive_server_service.py stop        # Stop the service
-python3.7 intensive_server_service.py restart     # Restart the service
+python3 intensive_server_service.py start       # Start the service
+python3 intensive_server_service.py stop        # Stop the service
+python3 intensive_server_service.py restart     # Restart the service
 ```
