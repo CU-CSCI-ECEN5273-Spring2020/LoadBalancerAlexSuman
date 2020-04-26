@@ -212,7 +212,9 @@ class Balancer:
                     print_lock.release()
 
                start_new_thread(self.threaded_connection, (connection, address))
-               
+
+     def stop(self):
+          global socket
           socket.close()
 
      def select_roundrobin(self):
