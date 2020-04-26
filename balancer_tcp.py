@@ -245,16 +245,12 @@ class Balancer:
           connection.close()
 
 if __name__ == "__main__":
-#     BALANCER_HOST = "localhost"
-     BALANCER_HOST = "35.197.5.17"
-     BALANCER_PORT = 8081
+     BALANCER_HOST = "0.0.0.0"
+     BALANCER_PORT = 8888
      SERVERS = [
-               #     {"protocol": "http://", "host": "localhost", "port": 8000}, 
-               #     {"protocol": "http://", "host": "localhost", "port": 8001}
-                    
-                    {"protocol": "http://", "host": "35.247.73.142", "port":8001},
-                    {"protocol": "http://", "host": "34.106.248.143", "port":8002},
-                    {"protocol": "http://", "host": "34.125.74.70", "port":8003}
+                    {"protocol": "http://", "host": "35.247.73.142", "port":8080},
+                    {"protocol": "http://", "host": "34.106.248.143", "port":8080},
+                    {"protocol": "http://", "host": "34.125.74.70", "port":8080}
                ]
      LoadBalancer = Balancer(BALANCER_HOST, BALANCER_PORT, SERVERS)
      LoadBalancer.mode = Balancer.MODE_ROUNDROBIN
