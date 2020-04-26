@@ -194,7 +194,7 @@ class Balancer:
                print_lock.release()
 
      def start(self):
-          global socket
+          global socket 
           socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
           socket.bind((self.host, self.port))
           socket.listen(5)

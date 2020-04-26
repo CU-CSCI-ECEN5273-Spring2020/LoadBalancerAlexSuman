@@ -4,10 +4,9 @@ import time
 import random
 import sys
 
-ADDR = "0.0.0.0"
-PORT = 8080
 
-class cpu_intensive(server.BaseHTTPRequestHandler):
+
+class IntensiveHandler(server.BaseHTTPRequestHandler):
      def compute_primes(self):
           start_time = time.time()
           num = random.randint(4589789,78909929)
@@ -35,12 +34,26 @@ class cpu_intensive(server.BaseHTTPRequestHandler):
           exec_time += "</html>"
           self.wfile.write(exec_time.encode())
 
+
+class IntensiveServer:
+
+     address = "0.0.0.0"
+     port = 8080
+
+     def start(self):
+          # Start the server
+          httpd = server.HTTPServer((self.address, self.port), IntensiveHandler)
+          httpd.serve_forever()
+
+
 if __name__ == "__main__":
 
-     # If a port is pass in use that port, otherwise use the default (8080)
-     if(len(sys.argv) > 1):
-          PORT = int(sys.argv[1])
+     intensive_server = IntensiveServer()
 
-     # Start the server
-     httpd = server.HTTPServer((ADDR, PORT), cpu_intensive)
-     httpd.serve_forever()
+     # If a port is passed in use that port, otherwise use the default (8080)
+     if(len(sys.argv) > 1):
+          server.port = int(sys.argv[1])
+
+     intensive_server.start()
+
+     
