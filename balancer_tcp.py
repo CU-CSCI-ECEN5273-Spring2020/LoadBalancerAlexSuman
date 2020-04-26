@@ -50,7 +50,7 @@ class Balancer:
      def threaded_connection(self, connection, address):
           
           if self.verbose:
-               start_time = time.thread_time_ns()
+               start_time = time.time_ns()
 
           # Increment the request number
           request_lock.acquire()
@@ -186,7 +186,7 @@ class Balancer:
           
 
           if self.verbose:
-               end_time = time.thread_time_ns()
+               end_time = time.time_ns()
 
                total_time = end_time - start_time
                print_lock.acquire()
