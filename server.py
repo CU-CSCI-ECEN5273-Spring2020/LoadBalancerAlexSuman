@@ -4,7 +4,7 @@ import time
 import random
 import sys
 
-ADDR = "localhost"
+ADDR = "0.0.0.0"
 PORT = 8080
 
 class cpu_intensive(server.BaseHTTPRequestHandler):
