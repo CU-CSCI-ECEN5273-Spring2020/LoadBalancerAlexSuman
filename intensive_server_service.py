@@ -6,8 +6,11 @@ from daemon import daemon
 
 class BalancerDaemon(daemon):
      def run(self):
-          int_server = IntensiveServer()
-          int_server.start()
+          try:
+               int_server = IntensiveServer()
+               int_server.start()
+          except Exception as e:
+               print(e)
 
 if __name__ == "__main__":
      daemon = BalancerDaemon('/tmp/intensive-server-daemon.pid')
