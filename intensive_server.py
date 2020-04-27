@@ -5,7 +5,6 @@ import random
 import sys
 
 
-
 class IntensiveHandler(server.BaseHTTPRequestHandler):
      def compute_primes(self):
           start_time = time.time()
@@ -43,6 +42,7 @@ class IntensiveServer:
      def start(self):
           # Start the server
           httpd = server.HTTPServer((self.address, self.port), IntensiveHandler)
+          print("Server instance started on port", self.port)
           httpd.serve_forever()
 
 

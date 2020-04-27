@@ -211,6 +211,7 @@ class Balancer:
           socket.listen(5)
 
           print("Load balancer is now running at {}:{}".format(self.host, self.port))
+          print()
 
           while True:
 
