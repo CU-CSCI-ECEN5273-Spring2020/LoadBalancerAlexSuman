@@ -57,6 +57,8 @@ class Balancer:
           # Increment the request number
           request_lock.acquire()
           self.request_num += 1
+          if self.verbose:
+               print("Request num: " + str(self.request_num))
           request_lock.release()
 
           # Get the raw content of the request and convert to an HTTPRequest
@@ -194,8 +196,6 @@ class Balancer:
           connection.send(resp.content)
           connection.close()
 
-          
-
           if self.verbose:
                end_time = time.time_ns()
 
@@ -267,6 +267,6 @@ if __name__ == "__main__":
                     {"protocol": "http://", "host": "34.125.74.70", "port":8080}
                ]
      LoadBalancer = Balancer(BALANCER_HOST, BALANCER_PORT, SERVERS)
-     LoadBalancer.mode = Balancer.MODE_ROUNDROBIN
+     LoadBalancer.mode = Balancer.MODE_CHAINEDFAILOVER
      LoadBalancer.verbose = True
      LoadBalancer.start()
