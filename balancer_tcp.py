@@ -12,6 +12,8 @@ import threading
 print_lock = threading.Lock()
 request_lock = threading.Lock()
 count_lock = threading.Lock()
+ip_arr = ["35.247.73.142", "34.106.248.143", "34.125.74.70"]
+#ip_arr_dict = {"35.247.73.142":"Server 1", "34.106.248.143": "Server 2", "34.125.74.70":"Server 3"}
 
 class HTTPRequest(BaseHTTPRequestHandler):
      def __init__(self, request_text):
@@ -128,7 +130,16 @@ class Balancer:
                if self.verbose:
                     print_lock.acquire()
                     print("Trying to route connection to:", url)
+                  #  print_lock.release()
+
+                    if ip_arr[0] in url:
+                        print("Server 1")
+                    elif ip_arr[1] in url:
+                        print("Server 2")
+                    elif ip_arr[2] in url:
+                        print("Server 3")
                     print_lock.release()
+
                try:
                     # Increment the server request count
                     count_lock.acquire()
