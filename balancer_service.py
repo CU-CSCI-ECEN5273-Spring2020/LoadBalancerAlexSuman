@@ -1,7 +1,7 @@
 import sys
 import time
 
-from balancer_tcp import Balancer
+from balancer import Balancer
 from daemon import daemon
 
 class BalancerDaemon(daemon):
