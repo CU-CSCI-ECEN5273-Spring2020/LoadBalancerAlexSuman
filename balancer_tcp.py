@@ -12,8 +12,6 @@ import threading
 print_lock = threading.Lock()
 request_lock = threading.Lock()
 count_lock = threading.Lock()
-ip_arr = ["35.247.73.142", "34.106.248.143", "34.125.74.70"]
-#ip_arr_dict = {"35.247.73.142":"Server 1", "34.106.248.143": "Server 2", "34.125.74.70":"Server 3"}
 
 class HTTPRequest(BaseHTTPRequestHandler):
      def __init__(self, request_text):
@@ -91,7 +89,7 @@ class Balancer:
 
                     if self.verbose:
                          print_lock.acquire()
-                         print("Trying to route connection to:", url)
+                         print("Trying to route connection to:", url + " (" + server["name"] + ")")
                          print_lock.release()
 
                     try:
@@ -110,7 +108,7 @@ class Balancer:
 
                          if self.verbose:
                               print_lock.acquire()
-                              print("Routing to " + url + " failed. Failing over to next server.")
+                              print("Routing to " + url + " (" + server["name"] + ") failed. Failing over to next server.")
                               print_lock.release()
 
                          resp = None
@@ -131,15 +129,7 @@ class Balancer:
                url = self.build_url(server, request)
                if self.verbose:
                     print_lock.acquire()
-                    print("Trying to route connection to:", url)
-                  #  print_lock.release()
-
-                    if ip_arr[0] in url:
-                        print("Server 1")
-                    elif ip_arr[1] in url:
-                        print("Server 2")
-                    elif ip_arr[2] in url:
-                        print("Server 3")
+                    print("Trying to route connection to:", url + " (" + server["name"] + ")")
                     print_lock.release()
 
                try:
@@ -262,9 +252,9 @@ if __name__ == "__main__":
      BALANCER_HOST = "0.0.0.0"
      BALANCER_PORT = 8888
      SERVERS = [
-                    {"protocol": "http://", "host": "35.247.73.142", "port":8080},
-                    {"protocol": "http://", "host": "34.106.248.143", "port":8080},
-                    {"protocol": "http://", "host": "34.125.74.70", "port":8080}
+                    {"name": "Server #1", "protocol": "http://", "host": "35.247.73.142", "port":8080},
+                    {"name": "Server #2", "protocol": "http://", "host": "34.106.248.143", "port":8080},
+                    {"name": "Server #3", "protocol": "http://", "host": "34.125.74.70", "port":8080}
                ]
      LoadBalancer = Balancer(BALANCER_HOST, BALANCER_PORT, SERVERS)
      LoadBalancer.mode = Balancer.MODE_CHAINEDFAILOVER

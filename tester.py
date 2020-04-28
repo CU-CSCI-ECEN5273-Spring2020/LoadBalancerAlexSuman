@@ -14,7 +14,7 @@ def threaded_get():
      global fail_count
 
      try:
-          resp = requests.get("http://localhost:8081", verify=False)
+          resp = requests.get("http://35.197.5.17:8888", verify=False)
 
           if resp.status_code == 200:
                with count_lock:
