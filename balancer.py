@@ -52,12 +52,11 @@ class Balancer:
           if self.verbose:
                start_time = time.time_ns()
 
-          # Increment the request number
-          request_lock.acquire()
-          self.request_num += 1
+          # Print the request number
+          print_lock.acquire()
           if self.verbose:
                print("Request num: " + str(self.request_num))
-          request_lock.release()
+          print_lock.release()
 
           # Get the raw content of the request and convert to an HTTPRequest
           content = connection.recv(4096)
@@ -186,6 +185,11 @@ class Balancer:
           connection.send(resp.content)
           connection.close()
 
+          # Increment the request count
+          request_lock.acquire()
+          self.request_num += 1
+          request_lock.release()
+
           if self.verbose:
                end_time = time.time_ns()
 
@@ -205,15 +209,20 @@ class Balancer:
 
           while True:
 
-               # Accept a request from the client
-               connection, address = socket.accept()
+               try:
+                    # Accept a request from the client
+                    connection, address = socket.accept()
 
-               if self.verbose:
-                    print_lock.acquire()
-                    print("Received a connection from:", address)
-                    print_lock.release()
+                    if self.verbose:
+                         print_lock.acquire()
+                         print("Received a connection from:", address)
+                         print_lock.release()
 
-               start_new_thread(self.threaded_connection, (connection, address))
+                    start_new_thread(self.threaded_connection, (connection, address))
+               except:
+                    socket.close()
+                    return
+
 
      def stop(self):
           global socket
@@ -249,14 +258,14 @@ class Balancer:
           connection.close()
 
 if __name__ == "__main__":
-     BALANCER_HOST = "0.0.0.0"
+     BALANCER_HOST = "localhost"
      BALANCER_PORT = 8888
      SERVERS = [
-                    {"name": "Server #1", "protocol": "http://", "host": "35.247.73.142", "port":8080},
-                    {"name": "Server #2", "protocol": "http://", "host": "34.106.248.143", "port":8080},
-                    {"name": "Server #3", "protocol": "http://", "host": "34.125.74.70", "port":8080}
+                    {"name": "Server #1", "protocol": "http://", "host": "localhost", "port":8001},
+                    {"name": "Server #2", "protocol": "http://", "host": "localhost", "port":8002},
+                    {"name": "Server #3", "protocol": "http://", "host": "localhost", "port":8003}
                ]
      LoadBalancer = Balancer(BALANCER_HOST, BALANCER_PORT, SERVERS)
-     LoadBalancer.mode = Balancer.MODE_CHAINEDFAILOVER
+     LoadBalancer.mode = Balancer.MODE_LEASTCONNECTION
      LoadBalancer.verbose = True
      LoadBalancer.start()
